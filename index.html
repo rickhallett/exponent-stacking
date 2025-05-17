@@ -221,6 +221,63 @@
       background-size: 50px 50px;
       background-position: -1px -1px;
     }
+
+    .impact-card {
+      background: var(--card-bg);
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .impact-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--brand), transparent);
+    }
+
+    .impact-header {
+      font-size: 0.9rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+    }
+
+    .impact-text {
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      font-weight: 600;
+      color: var(--brand);
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 8px var(--brand-glow);
+    }
+
+    .impact-value {
+      font-size: clamp(1.8rem, 6vw, 3rem);
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 0 15px var(--brand-glow);
+      margin: 0.5rem 0;
+      font-family: 'Inter', monospace;
+      letter-spacing: -0.02em;
+      word-break: break-all;
+      line-height: 1.2;
+    }
+
+    .impact-subtext {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      font-style: italic;
+    }
   </style>
 </head>
 
@@ -294,6 +351,13 @@
       <canvas id="impactChart" height="120"></canvas>
     </div>
 
+    <div class="impact-card">
+      <div class="impact-header">DECADE IMPACT FACTOR</div>
+      <div class="impact-text" id="impactText">One</div>
+      <div class="impact-value" id="impactValue">1</div>
+      <div class="impact-subtext">Orders of magnitude over baseline</div>
+    </div>
+
     <footer>
       Drag the sliders to see how stacking exponents can sky‑rocket (or stall) impact over the next decade.<br>
       <small>Baseline tech growth is assumed to double roughly every 2 years (≈40% annual). Your multipliers crank that
@@ -338,8 +402,58 @@
       const effectiveGrowth = baseGrowth * stackMultiplier;
 
       const years = [...Array(11).keys()]; // 0–10
-      impact.data.datasets[0].data = years.map(year => Math.pow(effectiveGrowth, year));
+      const impactData = years.map(year => Math.pow(effectiveGrowth, year));
+      impact.data.datasets[0].data = impactData;
       impact.update();
+
+      // Update the impact factor display - show the 10-year value
+      const decadeImpact = impactData[10];
+
+      // Format the number with commas as thousand separators
+      function formatNumberWithCommas(num) {
+        if (num < 1e21) {
+          return Math.floor(num).toLocaleString('en-US');
+        } else {
+          // For extremely large numbers
+          const exponent = Math.floor(Math.log10(num));
+          const mantissa = num / Math.pow(10, exponent);
+          let digits = mantissa.toString().replace('.', '');
+          const zerosToAdd = exponent - (digits.length - 1);
+          digits += '0'.repeat(Math.max(0, zerosToAdd));
+
+          // Add commas
+          let result = '';
+          for (let i = 0; i < digits.length; i++) {
+            if (i > 0 && (digits.length - i) % 3 === 0) {
+              result += ',';
+            }
+            result += digits[i];
+          }
+          return result;
+        }
+      }
+
+      // Create a text description of the number
+      function getTextDescription(num) {
+        const units = ['', 'Thousand', 'Million', 'Billion', 'Trillion', 'Quadrillion', 'Quintillion', 'Sextillion', 'Septillion', 'Octillion', 'Nonillion', 'Decillion'];
+
+        if (num < 1000) {
+          return num.toFixed(0);
+        }
+
+        // Find the appropriate unit
+        const magnitude = Math.min(Math.floor(Math.log10(num) / 3), units.length - 1);
+        const divisor = Math.pow(10, magnitude * 3);
+        const value = num / divisor;
+
+        // Format to 2 decimal places and remove trailing zeros
+        let formatted = value.toFixed(2).replace(/\.?0+$/, '');
+
+        return `${formatted} ${units[magnitude]}`;
+      }
+
+      document.getElementById('impactValue').textContent = formatNumberWithCommas(decadeImpact);
+      document.getElementById('impactText').textContent = getTextDescription(decadeImpact);
     }
 
     // -----------  Chart.js setup  ------------
