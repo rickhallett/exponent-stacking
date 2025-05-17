@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exponent Stacking Playground</title>
+  <!-- Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --card-bg: rgba(15, 23, 42, 0.8);
+      --card-radius: 1rem;
+      --shadow: 0 8px 32px rgba(0, 0, 255, 0.1);
+      --brand: #4f46e5;
+      --brand-glow: rgba(79, 70, 229, 0.4);
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --grad-start: #0f172a;
+      --grad-end: #1e293b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      padding: clamp(1rem, 5vw, 3rem);
+      background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 5vw, 2.5rem);
+      text-align: center;
+      margin: 0 0 1.5rem;
+      color: white;
+      letter-spacing: 0.02em;
+      text-shadow: 0 0 15px var(--brand-glow);
+      position: relative;
+    }
+
+    h1::after {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--brand), transparent);
+    }
+
+    blockquote {
+      margin: 0 0 2rem;
+      padding: 1rem 1.5rem;
+      font-style: italic;
+      background: rgba(79, 70, 229, 0.1);
+      border-left: 4px solid var(--brand);
+      border-radius: var(--card-radius);
+      backdrop-filter: blur(8px);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+    }
+
+    blockquote:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(79, 70, 229, 0.2);
+    }
+
+    #controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .slider-group {
+      background: var(--card-bg);
+      padding: 1.5rem;
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s ease;
+    }
+
+    .slider-group:hover {
+      box-shadow: 0 10px 40px rgba(79, 70, 229, 0.15);
+      transform: translateY(-3px);
+    }
+
+    .slider-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .slider-wrapper {
+      position: relative;
+      margin-bottom: 0.5rem;
+    }
+
+    .slider-group input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      outline: none;
+      margin: 0.5rem 0;
+    }
+
+    .slider-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      background: var(--brand);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--brand-glow);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .slider-group input[type="range"]::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      background: var(--brand);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--brand-glow);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .slider-group input[type="range"]::-webkit-slider-thumb:hover,
+    .slider-group input[type="range"]::-moz-range-thumb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px var(--brand-glow);
+    }
+
+    .slider-value {
+      font-size: 1.1rem;
+      text-align: right;
+      color: var(--brand);
+      font-weight: bold;
+      text-shadow: 0 0 8px var(--brand-glow);
+    }
+
+    .chart-container {
+      background: var(--card-bg);
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    canvas {
+      width: 100%;
+      border-radius: calc(var(--card-radius) - 0.5rem);
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.9rem;
+      margin-top: 2rem;
+      color: var(--text-dim);
+      padding: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      blockquote {
+        padding: 0.8rem;
+        font-size: 0.9rem;
+      }
+
+      .slider-group {
+        padding: 1rem;
+      }
+
+      footer {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Futuristic grid lines background */
+    .grid-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background-image:
+        linear-gradient(rgba(79, 70, 229, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79, 70, 229, 0.05) 1px, transparent 1px);
+      background-size: 50px 50px;
+      background-position: -1px -1px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="grid-bg"></div>
+  <div class="container">
+    <h1>Exponent Stacking Playground</h1>
+
+    <blockquote>
+      "Insight is superior to analysis; the latter has no inherent value. Analysis is a means to arrive at insight; as
+      humans we tend to get attached to analysis as proof of value by itself" ~ Kai, 2025
+    </blockquote>
+
+    <div id="controls">
+      <!-- Speech speed -->
+      <div class="slider-group">
+        <label for="wpm">Words·Per·Minute (Speech speed)</label>
+        <div class="slider-wrapper">
+          <input type="range" id="wpm" min="50" max="250" value="150" step="10" oninput="updateSlider('wpm')">
+        </div>
+        <div class="slider-value" id="wpmVal">150</div>
+      </div>
+
+      <!-- AI interaction frequency -->
+      <div class="slider-group">
+        <label for="frequency">AI Interactions / day</label>
+        <div class="slider-wrapper">
+          <input type="range" id="frequency" min="0" max="20" value="5" step="1" oninput="updateSlider('frequency')">
+        </div>
+        <div class="slider-value" id="frequencyVal">5</div>
+      </div>
+
+      <!-- Prompt engineering skill -->
+      <div class="slider-group">
+        <label for="skill">Prompt Skill (0–10)</label>
+        <div class="slider-wrapper">
+          <input type="range" id="skill" min="0" max="10" value="5" step="1" oninput="updateSlider('skill')">
+        </div>
+        <div class="slider-value" id="skillVal">5</div>
+      </div>
+
+      <!-- Personal insight -->
+      <div class="slider-group">
+        <label for="insight">Personal Insight (0–10)</label>
+        <div class="slider-wrapper">
+          <input type="range" id="insight" min="0" max="10" value="5" step="1" oninput="updateSlider('insight')">
+        </div>
+        <div class="slider-value" id="insightVal">5</div>
+      </div>
+
+      <!-- Context revealed -->
+      <div class="slider-group">
+        <label for="context">Context Revealed to AI (0–10)</label>
+        <div class="slider-wrapper">
+          <input type="range" id="context" min="0" max="10" value="5" step="1" oninput="updateSlider('context')">
+        </div>
+        <div class="slider-value" id="contextVal">5</div>
+      </div>
+
+      <!-- Relationship attitude -->
+      <div class="slider-group">
+        <label for="relation">Relation to AI (Adversarial → Collaborative)</label>
+        <div class="slider-wrapper">
+          <input type="range" id="relation" min="0" max="10" value="5" step="1" oninput="updateSlider('relation')">
+        </div>
+        <div class="slider-value" id="relationVal">5</div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="impactChart" height="120"></canvas>
+    </div>
+
+    <footer>
+      Drag the sliders to see how stacking exponents can sky‑rocket (or stall) impact over the next decade.<br>
+      <small>Baseline tech growth is assumed to double roughly every 2 years (≈40% annual). Your multipliers crank that
+        base into a fresh exponent.</small>
+    </footer>
+  </div>
+
+  <script>
+    // Utility: update the numerical readout and trigger chart recompute
+    function updateSlider(id) {
+      document.getElementById(id + 'Val').textContent = document.getElementById(id).value;
+      computeAndPlot();
+    }
+
+    // Helper: convert a raw slider value to its exponential multiplier
+    function toMultiplier(value, base, scale) {
+      return 1 + (value - base) / scale; // linear → multiplier (≥0)
+    }
+
+    // Core computation + chart update
+    function computeAndPlot() {
+      const wpm = parseFloat(document.getElementById('wpm').value);
+      const frequency = parseFloat(document.getElementById('frequency').value);
+      const skill = parseFloat(document.getElementById('skill').value);
+      const insight = parseFloat(document.getElementById('insight').value);
+      const context = parseFloat(document.getElementById('context').value);
+      const relation = parseFloat(document.getElementById('relation').value);
+
+      // Baseline references
+      const wpmMult = wpm / 150;                      // baseline 150 wpm
+      const freqMult = toMultiplier(frequency, 5, 5);  // baseline 5 per day → ±100%
+      const skillMult = toMultiplier(skill, 5, 5);      // baseline 5 → 0–2×
+      const insightMult = toMultiplier(insight, 5, 5);
+      const contextMult = toMultiplier(context, 5, 5);
+      const relationMult = toMultiplier(relation, 5, 5);
+
+      // Aggregate multiplier for the human side
+      const stackMultiplier = wpmMult * freqMult * skillMult * insightMult * contextMult * relationMult;
+
+      // ******  DRAMATIC EXPONENTIAL STACK  *******
+      const baseGrowth = 1.4; // ≈40% annual improvement baseline
+      const effectiveGrowth = baseGrowth * stackMultiplier;
+
+      const years = [...Array(11).keys()]; // 0–10
+      impact.data.datasets[0].data = years.map(year => Math.pow(effectiveGrowth, year));
+      impact.update();
+    }
+
+    // -----------  Chart.js setup  ------------
+    const ctx = document.getElementById('impactChart').getContext('2d');
+    const years = [...Array(11).keys()];
+
+    const impact = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: years.map(y => `Year ${y}`),
+        datasets: [{
+          label: 'Projected Impact (Linear Scale)',
+          data: years.map(() => 0),
+          fill: true,
+          borderWidth: 3,
+          borderColor: '#4f46e5',
+          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+          pointBackgroundColor: '#4f46e5',
+          pointBorderColor: '#fff',
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: 'Impact Index (orders of magnitude!)',
+              color: '#e2e8f0'
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.05)'
+            },
+            ticks: {
+              color: '#94a3b8'
+            }
+          },
+          x: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.05)'
+            },
+            ticks: {
+              color: '#94a3b8'
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: ctx => `Impact: ${ctx.parsed.y.toExponential(2)}`
+            },
+            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+            titleColor: '#e2e8f0',
+            bodyColor: '#e2e8f0',
+            borderColor: '#4f46e5',
+            borderWidth: 1,
+            displayColors: false
+          },
+          legend: {
+            labels: {
+              color: '#e2e8f0'
+            }
+          }
+        }
+      }
+    });
+
+    // First render
+    computeAndPlot();
+  </script>
+</body>
+
+</html>
